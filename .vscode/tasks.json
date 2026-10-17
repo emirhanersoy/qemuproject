@@ -1,0 +1,150 @@
+{
+    // VSCode gorevleri (Tasks).
+    //   Ctrl+Shift+B          -> "build" (varsayilan derleme gorevi)
+    //   Ctrl+Shift+P > Tasks: Run Task  -> digerlerini sec
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "detail": "firmware.elf uret (riscv-none-elf-gcc)",
+            "type": "shell",
+            "command": "make",
+            "windows": { "command": "mingw32-make" },
+            "args": ["all"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$gcc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "build (RTG4 hedefi)",
+            "detail": "Gercek RTG4/Mi-V adresleriyle derle (PLATFORM_RTG4_MIV). QEMU'da CALISMAZ, sadece derleme kontrolu.",
+            "type": "shell",
+            "command": "make",
+            "windows": { "command": "mingw32-make" },
+            "args": ["all", "PLATFORM=PLATFORM_RTG4_MIV"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "rebuild",
+            "detail": "clean + build (her seyi sifirdan derle)",
+            "type": "shell",
+            "command": "make",
+            "windows": { "command": "mingw32-make" },
+            "args": ["clean", "all"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "clean",
+            "detail": "Uretilen dosyalari sil",
+            "type": "shell",
+            "command": "make",
+            "windows": { "command": "mingw32-make" },
+            "args": ["clean"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "run (QEMU)",
+            "detail": "Derle ve QEMU'da calistir. UART ciktisi bu terminalde. Cikis: Ctrl+A sonra X",
+            "type": "shell",
+            "command": "make",
+            "windows": { "command": "mingw32-make" },
+            "args": ["run"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOn": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            // ARKA PLAN gorevi: QEMU debug boyunca bu terminalde yasar.
+            // VSCode "hazir, GDB baglanabilir." satirini gorunce (endsPattern)
+            // gorevi "hazir" sayar ve GDB'yi baglar, ama gorevi KAPATMAZ.
+            // (Gorev bitip terminal kapansaydi VSCode QEMU'yu da oldururdu.)
+            // UART ciktisi bu terminalde gorunur. postDebugTask QEMU'yu kapatir.
+            "label": "qemu: debug sunucusunu baslat",
+            "detail": "QEMU'yu durdurulmus halde ve GDB sunucusu ile baslatir (launch.json kullanir)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/tools/qemu-debug.ps1",
+                "-Foreground"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOn": "build",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "qemu",
+                "pattern": { "regexp": "^__hic_eslesmez__$" },
+                "background": {
+                    "activeBegins": true,
+                    "beginsPattern": "\\[qemu-debug\\] baslatiliyor",
+                    "endsPattern": "\\[qemu-debug\\] hazir, GDB baglanabilir"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true,
+                "focus": false
+            }
+        },
+        {
+            "label": "qemu: durdur",
+            "detail": "Arkada kalan QEMU orneklerini kapatir",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/tools/qemu-stop.ps1"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "silent", "close": true }
+        },
+        {
+            "label": "smoke test (ucdan uca dogrulama)",
+            "detail": "Derleme + QEMU calismasi + GDB zincirini otomatik dogrular (10 kontrol)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/tools/smoke-test.ps1"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        }
+    ]
+}

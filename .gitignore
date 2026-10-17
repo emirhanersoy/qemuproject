@@ -1,0 +1,16 @@
+# Derleme cikislari
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+qemu-out.txt
+serial.log
+platform.stamp
+
+# Makineye ozgu arac yollari (her gelistiricide farkli)
+config.mk
+
+# Editor
+.vscode/ipch/

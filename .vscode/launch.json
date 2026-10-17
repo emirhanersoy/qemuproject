@@ -1,0 +1,101 @@
+{
+    // F5 ile QEMU uzerinde kaynak seviyesinde hata ayiklama.
+    //
+    // Nasil calisir:
+    //   1) preLaunchTask -> projeyi derler, QEMU'yu "-S" (durdurulmus) ve
+    //                       "-gdb tcp::1234" ile ayri pencerede baslatir
+    //   2) cppdbg        -> riscv-none-elf-gdb acilir, localhost:1234'e baglanir
+    //   3) postDebugTask -> oturum bitince QEMU kapatilir
+    //
+    // Gereksinim: "C/C++" eklentisi (ms-vscode.cpptools)
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "QEMU: Debug (main icinde dur)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/firmware.elf",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:APPDATA}/xPacks/@xpack-dev-tools/riscv-none-elf-gcc/15.2.0-1.1/.content/bin/riscv-none-elf-gdb.exe",
+            "miDebuggerServerAddress": "localhost:1234",
+
+            "preLaunchTask": "qemu: debug sunucusunu baslat",
+            "postDebugTask": "qemu: durdur",
+
+            "stopAtEntry": true,
+            "stopAtConnect": false,
+
+            "setupCommands": [
+                {
+                    "description": "Mimariyi 32-bit RISC-V olarak sabitle",
+                    "text": "set architecture riscv:rv32",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "MMIO adreslerine erisimi engellemesin",
+                    "text": "set mem inaccessible-by-default off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Struct degerlerini okunabilir goster",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            // startup.S icindeki reset kodunu ilk komuttan itibaren adimlamak icin.
+            // QEMU once kendi ROM'unda (0x1000, kaynagi yok) baslar, oradan
+            // _start'a (0x80000000) atlar. Gecici breakpoint'i _start'a koyuyoruz,
+            // boylece dogrudan startup.S'in ilk satirinda, kaynak koduyla durulur.
+            "name": "QEMU: Debug (startup.S _start'ta dur)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/firmware.elf",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:APPDATA}/xPacks/@xpack-dev-tools/riscv-none-elf-gcc/15.2.0-1.1/.content/bin/riscv-none-elf-gdb.exe",
+            "miDebuggerServerAddress": "localhost:1234",
+
+            "preLaunchTask": "qemu: debug sunucusunu baslat",
+            "postDebugTask": "qemu: durdur",
+
+            "stopAtEntry": false,
+            "stopAtConnect": false,
+
+            "setupCommands": [
+                {
+                    "description": "Mimariyi 32-bit RISC-V olarak sabitle",
+                    "text": "set architecture riscv:rv32",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "MMIO adreslerine erisimi engellemesin",
+                    "text": "set mem inaccessible-by-default off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Assembly adimlarken sonraki komutu goster",
+                    "text": "set disassemble-next-line on",
+                    "ignoreFailures": true
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "description": "Reset kodunun ilk komutuna gecici breakpoint",
+                    "text": "tbreak _start",
+                    "ignoreFailures": false
+                }
+            ]
+        }
+    ]
+}

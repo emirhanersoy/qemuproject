@@ -1,0 +1,31 @@
+{
+    "files.associations": {
+        "*.ld": "linkerscript",
+        "*.S": "asm-collection",
+        "Makefile": "makefile",
+        "config.mk": "makefile"
+    },
+    // Makefile satirlari SEKME (tab) ile girintilenmek zorunda; bosluk olursa derlenmez.
+    "[makefile]": {
+        "editor.insertSpaces": false,
+        "editor.detectIndentation": false
+    },
+    "files.eol": "\n",
+    "files.trimTrailingWhitespace": true,
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+
+    // VSCode normalde sadece C/C++ dosyalarina breakpoint koydurur.
+    // Bu ayar startup.S (assembly) satirlarina da breakpoint koymayi acar.
+    "debug.allowBreakpointsEverywhere": true,
+
+    // Uretilen dosyalar dosya agacini ve aramayi kalabaliklastirmasin.
+    "files.exclude": {
+        "**/*.o": true,
+        "platform.stamp": true
+    },
+    "search.exclude": {
+        "**/*.lst": true,
+        "**/*.map": true,
+        "**/*.hex": true
+    }
+}

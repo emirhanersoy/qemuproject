@@ -1,0 +1,9 @@
+{
+    // Tek zorunlu eklenti: C/C++ (IntelliSense + F5 ile GDB debug).
+    // Derleme Makefile ile tasks.json uzerinden yapildigi icin
+    // "Makefile Tools" eklentisine gerek yok; kurulursa kendi make
+    // yapilandirmasini dayatip c_cpp_properties.json ile cakisabiliyor.
+    "recommendations": [
+        "ms-vscode.cpptools"
+    ]
+}
