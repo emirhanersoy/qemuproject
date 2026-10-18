@@ -1,14 +1,4 @@
-/*
- * main.c  --  RTG4 / Mi-V RV32 firmware: "Hello World" + periyodik
- *             zamanlayici kesmesi (timer interrupt).
- *
- * Akis:
- *   startup.S  ->  main()  ->  timer_start()  ->  sonsuz dongu (wfi)
- *                                   |
- *                    her 100 ms'de donanim kesme uretir
- *                                   v
- *   startup.S:trap_entry  ->  trap_handler()  ->  sayac++ , sonraki kesmeyi kur
- */
+
 #include "platform.h"
 #include "riscv_csr.h"
 #include "uart.h"
@@ -147,7 +137,7 @@ int main(void)
     timer_start();
     uart_puts("Zamanlayici kesmesi aktif. Sayac ilerliyor...\n\n");
 
-    for (;;) {
+    while(1){
         /*
          * wfi = Wait For Interrupt. Islemciyi kesme gelene kadar uyutur.
          * Bos dongude beklemek yerine bunu kullanmak gercek donanimda
@@ -163,10 +153,11 @@ int main(void)
             uart_puts("[tick ");
             uart_put_u32(now);
             uart_puts("] uptime = ");
+            uart_puts(" ");
             uart_put_u32(now / TICKS_PER_SECOND);
             uart_puts(" s\n");
         }
     }
 
-    return 0;   /* buraya asla gelinmez */
+    return 0;
 }

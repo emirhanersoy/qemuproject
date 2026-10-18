@@ -120,65 +120,20 @@ yolları kullanıcı PATH'ine ekler. Yönetici yetkisi gerekmez.
 
 ## 4. Kullanım
 
-### VSCode'dan
-
-**İlk açılış (bir kez):**
-
-1. VSCode'da `Dosya → Klasör Aç` ile **`qemuproject` klasörünün kendisini** açın
-   (tek bir dosyayı değil — `.vscode/` ayarları ancak klasör açılınca devreye girer).
-2. Sağ altta "önerilen eklentiler" uyarısı çıkarsa **C/C++** (`ms-vscode.cpptools`)
-   eklentisini kurun. Tek zorunlu eklenti bu.
-3. Araçlar bulunamıyor hatası alırsanız VSCode'u tamamen kapatıp yeniden açın
-   (PATH yeni eklendi, eski pencere görmez) — bkz. §9.
-
-**Günlük kullanım:**
-
+### VSCode'dan (hedeflenen akış)
+js
 | Ne istiyorsun | Nasıl |
 |---|---|
 | Derle | `Ctrl+Shift+B` |
 | QEMU'da çalıştır | `Ctrl+Shift+P` → `Tasks: Run Task` → `run (QEMU)` |
 | Debug (breakpoint, step) | `F5` |
-| Hangi debug modu | Sol menü → **Run and Debug** (`Ctrl+Shift+D`) → üstteki listeden seç |
-| RTG4 adresleriyle derleme kontrolü | `Tasks: Run Task` → `build (RTG4 hedefi)` |
-| Sıfırdan derle | `Tasks: Run Task` → `rebuild` |
-| Her şeyi doğrula | `Tasks: Run Task` → `smoke test` |
-
-`run (QEMU)` UART çıktısını VSCode'un terminal panelinde gösterir. Çıkmak için
-terminale tıklayıp `Ctrl+A` sonra `X`; ya da terminal panelindeki çöp kutusu simgesi.
-
-> `build (RTG4 hedefi)` gerçek RTG4 adresleriyle (`0x4400_0000` CLINT vb.) derler;
-> çıkan `firmware.elf` QEMU'da **çalışmaz**, sadece "RTG4 için de derleniyor mu"
-> kontrolüdür. Sonra `F5` veya `Ctrl+Shift+B` yaptığınızda Makefile platform
-> değişimini fark edip otomatik olarak QEMU hedefine geri derler.
-
-**Debug sırasında işe yarayanlar:**
-
-- **Breakpoint:** satır numarasının soluna tıklayın. `startup.S` (assembly)
-  satırlarına da koyabilirsiniz (`settings.json` bunu açıyor).
-- **Adımlama:** `F10` satır atla, `F11` fonksiyonun içine gir, `Shift+F11` çık,
-  `F5` devam.
-- **Değişken izleme:** sol paneldeki **Watch**'a `g_tick_count` ekleyin.
-  CSR'ları da izleyebilirsiniz: `$mcause`, `$mepc`, `$mstatus` (onluk gösterir:
-  `-2147483641` = `0x80000007`).
-- **GDB komutu çalıştırma:** alttaki **Debug Console**'a `-exec` önekiyle yazın:
-  ```
-  -exec p/x $mcause            # mcause'u hex göster
-  -exec info registers mtvec
-  -exec x/2xw 0x0200bff8       # CLINT mtime'i bellekten oku
-  ```
-- **UART çıktısı** debug sırasında alttaki **Terminal** panelinde,
-  `qemu: debug sunucusunu baslat` sekmesinde görünür.
-- Debug Console'daki `Warning: Debuggee TargetArchitecture not detected, assuming
-  x86_64` uyarısı zararsız: C/C++ eklentisinin mimari listesinde RISC-V yok, ama
-  gerçek mimariyi GDB bildiği için debug etkilenmez.
+| Her şeyi doğrula | `Ctrl+Shift+P` → `Tasks: Run Task` → `smoke test` |
 
 `F5`'e bastığında arka planda sırayla şunlar olur:
 
 1. `build` task'ı projeyi derler
-2. `qemu-debug.ps1 -Foreground` QEMU'yu `-S` (işlemci durdurulmuş) ve
-   `-gdb tcp::1234` ile VSCode'un terminal panelinde başlatır — UART çıktısı orada
-   görünür. Bu görev debug boyunca **açık kalır** (arka plan görevi); kapanırsa
-   VSCode QEMU'yu da öldürür
+2. `qemu-debug.ps1` QEMU'yu `-S` (işlemci durdurulmuş) ve `-gdb tcp::1234` ile
+   ayrı bir pencerede başlatır — UART çıktısı o pencerede görünür
 3. Betik 1234 portunun gerçekten dinlemeye geçtiğini doğrular
    (bu kontrol olmasa klasik "connection refused" yarışı yaşanır)
 4. `riscv-none-elf-gdb` localhost:1234'e bağlanır, `main`'de durur
@@ -187,10 +142,8 @@ terminale tıklayıp `Ctrl+A` sonra `X`; ya da terminal panelindeki çöp kutusu
 İki debug konfigürasyonu var:
 
 - **QEMU: Debug (main icinde dur)** — normal kullanım, `main`'de durur
-- **QEMU: Debug (startup.S _start'ta dur)** — reset kodunu ilk komuttan
-  itibaren adımlamak için; `startup.S`'in ilk satırında (`_start`,
-  `0x80000000`) kaynak koduyla durur. (QEMU aslında önce kendi ROM'unda,
-  `0x1000`'de başlar; orada kaynak kod olmadığı için o adım atlanıyor.)
+- **QEMU: Debug (reset vektorunde dur)** — `startup.S`'i ilk komuttan itibaren
+  adımlamak için; işlemci reset vektöründe (`0x1000`) durur
 
 ### Terminalden
 
@@ -385,16 +338,7 @@ işaret ediyor. `powershell -File tools/setup.ps1 -SkipInstall` ile yeniden üre
 
 **F5'te "Unable to start debugging"** — C/C++ eklentisi (`ms-vscode.cpptools`)
 kurulu mu? `launch.json` içindeki `miDebuggerPath` toolchain sürümünü
-(`15.2.0-1.1`) içeriyor; derleyiciyi güncellediyseniz
-`powershell -File tools/setup.ps1 -SkipInstall` çalıştırın — sürümü
-`launch.json` ve `c_cpp_properties.json` içinde otomatik düzeltir.
-
-**IntelliSense kırmızı dalgalı çizgi gösteriyor ama derleme başarılı** —
-sağ alttaki durum çubuğunda konfigürasyonun `QEMU-virt` olduğundan emin olun;
-`Ctrl+Shift+P` → `C/C++: Reset IntelliSense Database`.
-
-**F5'te "The preLaunchTask ... terminated with exit code 1"** — derleme hatası
-var demektir; **Problems** panelinde (`Ctrl+Shift+M`) hangi satır olduğu görünür.
+(`15.2.0-1.1`) içeriyor; derleyiciyi güncellediyseniz bu yolu da güncelleyin.
 
 **"connection refused" / debug bağlanmıyor** — arkada eski bir QEMU 1234
 portunu tutuyor olabilir: `powershell -File tools/qemu-stop.ps1`.
